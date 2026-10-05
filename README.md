@@ -237,7 +237,6 @@ Le temps s'écoule de haut en bas. Les flèches pleines sont des **messages envo
 
 ### 5.3 Diagramme de séquence de la récupération des données
 
-![Diagramme de séquence - récupération des données](docs/images/diagramme_sequence_recuperation.png)
 
 20. Le technicien **récupère la carte SD** de la station (retour en pointillés).
 21. Il **lit les données** sur l'**ordinateur**.
