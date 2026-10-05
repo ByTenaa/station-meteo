@@ -6,7 +6,7 @@
 2. [Diagramme de composants](#2-diagramme-de-composants)
 3. [Diagramme de cas d'utilisation](#3-diagramme-de-cas-dutilisation)
 4. [Diagramme d'activités](#4-diagramme-dactivités)
-5. [Diagramme de séquence](#5-diagramme-de-séquence)
+5. [Diagrammes de séquence](#5-diagrammes-de-séquence)
 6. [Conclusion](#6-conclusion)
 
 ---
@@ -27,200 +27,229 @@ Ce document présente l'analyse du système à travers quatre schémas : composa
 ---
 
 ## 2. Diagramme de composants
+<img width="1150" height="567" alt="image" src="https://github.com/user-attachments/assets/4f4401b7-9774-4bab-9226-1cfc41662c10" />
 
-[Diagramme de composants]
-<img width="1390" height="695" alt="diagramme_composants" src="https://github.com/user-attachments/assets/c810dbf4-d149-4bde-a117-364f63a2468c" />
 
 
 ### 2.1 Objectif
 
-Le diagramme de composants décrit l'**architecture matérielle** de la station : quels éléments la composent et comment ils sont reliés entre eux. Il répond à la question « de quoi est faite la station et qui communique avec qui ? ».
+Le diagramme de composants décrit l'**architecture matérielle** de la station : quels éléments la composent et par quel **bus ou interface** ils communiquent avec la carte. Il répond à la question « de quoi est faite la station et comment les éléments sont-ils reliés ? ».
 
 ### 2.2 Composant central
 
 La **carte STM32L476RG** (microcontrôleur Cortex M4) est le cœur du système. Tous les autres composants sont reliés à elle : c'est elle qui lit les capteurs, traite les données, pilote la LED, gère les boutons et écrit sur la carte SD. Aucun composant périphérique ne communique directement avec un autre.
 
-### 2.3 Composants périphériques
+### 2.3 Composants périphériques et interfaces
 
-| Composant | Rôle | Type de liaison (d'après le cahier des charges) |
+Chaque liaison est annotée avec le type d'interface utilisé.
+
+| Composant | Rôle | Interface |
 |---|---|---|
-| **Capteur de pression atmosphérique** | Mesure la pression de l'air | I2C ou SPI |
-| **Hygromètre** | Mesure le taux d'humidité | I2C ou SPI |
-| **Thermomètre** | Mesure la température de l'air | I2C ou SPI |
-| **Capteur de luminosité** | Mesure l'intensité lumineuse | Analogique |
-| **GPS** | Fournit la position géographique | UART |
-| **Horloge RTC** | Fournit la date et l'heure du système (horodatage des mesures) | I2C |
-| **Lecteur de carte SD** | Permet l'écriture des mesures sur la **carte SD** | SPI |
-| **Carte SD** | Support de stockage des données (reliée au lecteur, liaison en pointillés car amovible) | — |
-| **Boutons poussoirs** | Permettent à l'utilisateur de changer de mode | Numérique |
-| **LED** | Indique l'état/le mode courant du système | 2-wire |
+| **Capteur de pression atmosphérique** | Mesure la pression de l'air | **I2C** |
+| **Hygromètre** | Mesure le taux d'humidité | **I2C** |
+| **Capteurs de température** | Mesurent la température de l'air | **I2C** |
+| **Capteur de luminosité** | Mesure l'intensité lumineuse | **ADC** (conversion analogique-numérique) |
+| **GPS** | Fournit la position géographique | **USART** |
+| **Horloge RTC** | Fournit la date et l'heure (horodatage des mesures) | **I2C** |
+| **Lecteur de carte SD** | Permet l'écriture des mesures sur la carte SD | **SPI** |
+| **Carte SD** | Support de stockage des données (reliée au lecteur par un lien en pointillés car **amovible**) | — |
+| **Boutons poussoirs** | Permettent à l'utilisateur de changer de mode | **GPIO + EXTI** |
+| **LED** | Indique l'état/le mode courant du système | **GPIO ** |
+| **Module tiers** | Emplacement prévu pour les modules ajoutés ultérieurement | Selon le module |
 
 ### 2.4 Lecture du schéma
 
-- Chaque lien représente une **interface** (connecteur en demi-cercle en notation UML) entre un composant et la carte STM32.
-- Les **capteurs** (en haut et à droite) sont des composants d'**entrée** : ils fournissent des données.
-- Les **boutons** sont aussi des entrées : ils fournissent des commandes de l'utilisateur.
-- La **LED** est une **sortie** : elle informe l'utilisateur.
-- Le **lecteur de carte SD** est une sortie de stockage ; la **carte SD** est reliée au lecteur par un lien en pointillés, car elle est **amovible** (l'équipage la retire pour récupérer les données sur ordinateur).
+- Chaque lien aboutit à une **interface** (demi-cercle en notation UML) de la carte STM32.
+- Plusieurs composants partagent le même type de bus (**I2C** pour la pression, l'hygrométrie, la température et la RTC). Ils se distinguent par leur adresse sur le bus.
+- Les **capteurs** et les **boutons** sont des composants d'**entrée** : ils fournissent des mesures ou des commandes.
+- La **LED** est un composant de **sortie** : elle informe l'utilisateur.
+- Les interfaces **EXTI** (interruptions externes) permettent à la carte de réagir immédiatement à un événement, comme l'appui sur un bouton, sans interroger en permanence l'état des broches.
+- La **carte SD** est amovible : l'équipage la retire pour récupérer les données sur ordinateur.
 
 ### 2.5 Évolutivité
 
-Le cahier des charges prévoit l'ajout ultérieur de modules tiers (température de l'eau, force du courant marin, force du vent, taux de particules fines). L'architecture centralisée autour de la STM32 permet de les ajouter sans remettre en cause l'existant.
+Le **module tiers** représente les modules prévus par le cahier des charges (température de l'eau, force du courant marin, force du vent, taux de particules fines). Leur interface n'est pas figée sur le schéma, car elle dépend du module : analogique, I2C ou 2-wire. L'architecture centralisée autour de la STM32 permet de les ajouter sans remettre en cause l'existant.
 
 ---
 
 ## 3. Diagramme de cas d'utilisation
 
-[Diagramme de cas d'utilisation]<img width="787" height="646" alt="diagramme_cas_utilisation" src="https://github.com/user-attachments/assets/f59f5076-b913-4752-ada3-236bdd35460e" />
+<img width="810" height="667" alt="image" src="https://github.com/user-attachments/assets/55b1464a-93dd-4b1a-9725-86581ff1da21" />
 
 
 ### 3.1 Objectif
 
-Le diagramme de cas d'utilisation décrit **ce que le système permet de faire** du point de vue de ses utilisateurs et des systèmes externes, sans entrer dans le détail technique. Le rectangle central représente la frontière du système (la station météo).
+Le diagramme de cas d'utilisation décrit **ce que le système permet de faire** du point de vue de ses utilisateurs et des acteurs externes, sans entrer dans le détail technique. Le grand rectangle **« STATION »** représente la frontière du système.
 
 ### 3.2 Les acteurs
 
-**Acteurs humains (à gauche)**
-
 - **Membre d'équipage** : personne qui utilise la station au quotidien à bord du navire.
-- **Technicien** : acteur plus spécialisé. La flèche allant du technicien vers le membre d'équipage indique une **généralisation** : un technicien *est* un membre d'équipage et hérite donc de tous ses droits, auxquels s'ajoutent des fonctions de maintenance et de configuration.
-
-**Acteurs « systèmes » (à droite)**
-
-- **Système d'erreurs** : représente la détection et la gestion des défaillances matérielles.
-- **Système carte SD** : représente la gestion du stockage.
+- **Technicien** : acteur plus spécialisé. La flèche allant du technicien vers le membre d'équipage indique une **généralisation** : un technicien *est* un membre d'équipage et hérite donc de tous ses cas d'utilisation, auxquels s'ajoutent la maintenance et la configuration.
+- **Horloge RTC** : acteur secondaire (à droite), un composant externe que la station sollicite pour obtenir l'heure.
 
 ### 3.3 Les cas d'utilisation
 
-**Changements de mode (côté utilisateurs)**
-
-| Cas d'utilisation | Acteur | Déclenchement |
-|---|---|---|
-| **Basculer en mode Économique** | Membre d'équipage | Appui de **5 secondes sur le bouton vert** |
-| **Basculer en mode Maintenance** | Technicien | Appui de **5 secondes sur le bouton rouge** |
-| **Basculer en mode Configuration** | Technicien | Accès réservé au technicien. Le système **repasse automatiquement en mode standard au bout de 30 minutes d'inactivité** |
-
-Ces trois cas sont reliés par des **flèches en pointillés** au cas **« Démarrer mode standard »** : le mode standard est le mode de référence du système, celui dans lequel on démarre et vers lequel on revient après les autres modes.
-
-**Gestion des erreurs (côté systèmes)**
-
 | Cas d'utilisation | Acteur | Description |
 |---|---|---|
-| **Gérer erreurs RTC** | Système d'erreurs | Détecte et traite un dysfonctionnement de l'horloge |
-| **Gérer erreurs GPS** | Système d'erreurs | Détecte et traite l'absence ou l'invalidité des données GPS |
-| **Gérer erreurs capteurs** | Système d'erreurs | Détecte et traite une défaillance des capteurs (incohérence de mesure, absence de réponse…) |
-| **Gérer remplissage carte SD pleine** | Système carte SD | Réagit lorsque la carte SD n'a plus d'espace libre |
-| **Gérer erreurs d'écriture sur la carte SD** | Système carte SD | Réagit en cas d'échec d'écriture sur la carte |
+| **Démarrer en mode standard** | Membre d'équipage | Démarrage de la station dans son mode de fonctionnement par défaut |
+| **Revenir en mode standard** | Membre d'équipage | Retour au mode standard depuis un autre mode |
+| **Basculer en mode Économique** | Membre d'équipage | Accès en appuyant **5 secondes sur le bouton vert** |
+| **Basculer en mode Maintenance** | Technicien | Accès en appuyant **5 secondes sur le bouton rouge** |
+| **Basculer en mode Configuration** | Technicien | Retour automatique en mode standard au bout de **30 minutes d'inactivité** |
 
-### 3.4 Points clés
+### 3.4 Les relations entre cas d'utilisation
 
-- Le système distingue clairement **deux niveaux de droits** : l'équipage (mode économique) et le technicien (maintenance et configuration).
-- Le **mode standard** est le mode par défaut ; les autres modes y sont rattachés.
-- Les erreurs sont **gérées de façon autonome** par le système (flèches venant des acteurs systèmes vers les cas d'utilisation), sans action de l'utilisateur.
+- **« Changer de mode »** : les quatre cas *Revenir en mode standard*, *Basculer en mode Économique*, *Basculer en mode Maintenance* et *Basculer en mode Configuration* sont regroupés sous ce cas général. Ce sont les variantes d'une même action : changer le mode de fonctionnement de la station.
+- **`<<include>>` — Horodater des mesures** : *Démarrer en mode standard* **inclut obligatoirement** l'horodatage des mesures. Chaque mesure est systématiquement datée.
+- **`<<use>>` — Horloge RTC** : pour horodater, la station s'appuie sur l'acteur **Horloge RTC**, qui fournit la date et l'heure.
+- **`<<extend>>` — Être alerté en cas d'erreurs** : ce comportement est **optionnel** et ne se déclenche que si une erreur survient pendant le fonctionnement standard (la LED signale alors le problème).
+
+### 3.5 Points clés
+
+- Le système distingue **deux niveaux de droits** : l'équipage (démarrage, retour au standard, mode économique) et le technicien (maintenance et configuration).
+- Le **mode standard** est le mode de référence, auquel on revient depuis les autres modes.
+- La gestion des erreurs est une **extension** du mode standard : elle n'intervient qu'en cas de problème.
 
 ---
 
 ## 4. Diagramme d'activités
+<img width="1280" height="732" alt="image" src="https://github.com/user-attachments/assets/1d2ab831-2b23-4269-b3d8-2fe3f6e2b6ab" />
+<img width="1335" height="640" alt="image" src="https://github.com/user-attachments/assets/60c90cda-b25e-45bd-8d88-91f0e39db46d" />
 
-[Diagramme d'activités]
-<img width="1107" height="502" alt="diagramme_activité_bis" src="https://github.com/user-attachments/assets/53590036-1ddd-4926-9f62-ee8938afcbeb" />
-<img width="1073" height="661" alt="diagramme_d&#39;activité_2" src="https://github.com/user-attachments/assets/e9de549f-7653-415e-880c-0a33a9070b59" />
+
 
 ### 4.1 Objectif
 
-Le diagramme d'activités décrit le **comportement dynamique** de la station : l'enchaînement des actions, les décisions et les boucles, depuis l'allumage jusqu'à la gestion des modes et des erreurs.
+Le diagramme d'activités décrit le **comportement dynamique** de la station : l'enchaînement des actions, les décisions et les boucles, depuis l'allumage jusqu'à la gestion des modes et des erreurs. Les conditions des décisions sont notées entre crochets (`[oui]`, `[Erreur de lecture]`, `[Carte SD pleine]`…).
 
-### 4.2 Description du flux
+### 4.2 Démarrage
 
-1. **Allumage et initialisation** : le système initialise la carte STM32, les capteurs, l'horloge RTC, le GPS et le lecteur de carte SD.
-2. **Démarrage en mode standard** : la LED signale le mode standard, puis le système entre dans sa boucle de fonctionnement.
-3. **Boucle d'acquisition** (modes standard et économique) :
-   - lecture de l'heure via la RTC ;
-   - lecture des capteurs (pression, température, hygrométrie, luminosité) ;
-   - lecture de la position GPS ;
-   - formatage des données et **écriture sur la carte SD**.
-4. **Surveillance des boutons** : à tout moment, un appui long de 5 secondes sur un bouton déclenche un changement de mode :
-   - **bouton vert** → mode **économique** (fréquence d'acquisition réduite) ;
-   - **bouton rouge** → mode **maintenance** (données affichées en direct, écriture SD interrompue pour pouvoir retirer la carte sans risque) ;
-   - mode **configuration** → saisie de paramètres via l'interface série, retour automatique en standard après 30 minutes d'inactivité.
-5. **Gestion des erreurs** : en cas d'erreur (RTC, GPS, capteur, SD pleine, erreur d'écriture), le système signale le problème via la LED et applique le comportement prévu (nouvelle tentative, valeur par défaut `NA`, arrêt de l'enregistrement…).
+1. Le **nœud initial** mène à l'action **« Allumer le système »**.
+2. Une décision teste **`[Bouton rouge pressé]`** :
+   - **`[oui]`** : la station démarre en **mode configuration** ;
+   - **`[non]`** : la station démarre en **mode standard**.
 
-### 4.3 Points clés
+### 4.3 Mode configuration (encadré jaune)
 
-- Le système fonctionne en **boucle continue** tant qu'il est sous tension.
-- Les **décisions** portent sur l'état des boutons, la validité des données lues et l'état de la carte SD.
-- Chaque erreur a une **issue définie**, afin que la station reste fiable sans intervention.
+1. **Ouvrir l'interface série** et **allumer la LED jaune**.
+2. **Réception des commandes de l'utilisateur** : cette action produit l'objet **« Paramètres »**, c'est-à-dire les données de configuration saisies.
+3. Une décision teste **`[Inactivité 30 min]`** :
+   - **`[non]`** : retour à la réception de commandes (la station attend de nouveaux paramètres) ;
+   - **`[oui]`** : sortie du mode configuration vers l'initialisation du mode standard.
+
+### 4.4 Mode standard (encadré vert)
+
+1. **Initialiser** les capteurs, l'horloge RTC et la carte SD.
+2. **Lire les capteurs**, puis une décision teste **`[Lecture réussie]`** :
+   - **`[Erreur de lecture]`** : **allumer la LED d'erreur capteur**, puis retour à l'initialisation ;
+   - sinon, la lecture est valide et le flux continue.
+3. **Horodater les données** : la date et l'heure fournies par la RTC sont associées aux mesures.
+4. Les mesures horodatées forment l'objet **« Ligne de mesures »**.
+5. **Enregistrer sur la carte SD**.
+6. Une décision **« Vérification SD »** teste l'état de la carte :
+   - **`[Carte SD pleine]`** : **allumer la LED d'erreur**, puis retour à l'initialisation ;
+   - **`[espace disponible]`** : le flux continue.
+7. Une décision teste **« Délai de 10 min écoulé ? »**, qui correspond à la période d'acquisition du mode standard :
+   - **`[oui]`** : un nouveau cycle recommence depuis « Allumer le système », ce qui referme la **boucle principale** ;
+   - **`[non]`** : la station surveille les boutons pour un éventuel changement de mode (voir 4.5).
+
+### 4.5 Modes économique et maintenance
+
+<!-- VÉRIFIER : cette sous-section doit correspondre à la partie basse de ton diagramme d'activités -->
+
+Depuis le mode standard, un **appui de 5 secondes** sur un bouton déclenche un changement de mode :
+
+- **Bouton vert** → **mode économique** (LED bleue) : réduction de la fréquence d'acquisition et GPS actif **une mesure sur deux** ;
+- **Bouton rouge** → **mode maintenance** (LED orange) : les données des capteurs sont redirigées vers l'interface série et l'écriture sur la carte SD est désactivée.
+
+Un nouvel appui de 5 secondes permet de quitter le mode courant.
+
+### 4.6 Données manipulées
+
+| Objet | Où apparaît-il ? | Contenu |
+|---|---|---|
+| **Paramètres** | Mode configuration | Valeurs de configuration saisies via l'interface série |
+| **Ligne de mesures** | Mode standard | Mesures des capteurs et horodatage fournis par la RTC |
+
+### 4.7 Points clés
+
+- Le système fonctionne en **boucle continue** tant qu'il est sous tension : le diagramme n'a **pas de nœud final**.
+- Les **erreurs** sont traitées explicitement : erreur de lecture d'un capteur et carte SD pleine. Chacune allume une LED d'erreur, puis le système se réinitialise.
+- Le **mode configuration** est atteint dès le démarrage (bouton rouge pressé) et se termine automatiquement après 30 minutes d'inactivité.
 
 ---
 
-## 5. Diagramme de séquence
+## 5. Diagrammes de séquence
 
-[Diagramme de séquence]
-<img width="1057" height="743" alt="diagramme_séquence_1" src="https://github.com/user-attachments/assets/49b4f56e-6890-48e9-99dd-fd63dafbd487" /><img width="1046" height="251" alt="diagramme_séquence_2" src="https://github.com/user-attachments/assets/e2927f90-2502-40ed-b8f9-5517f5c90f65" />
+Les échanges sont répartis en deux diagrammes : l'**affichage des données** (utilisation de la station) et la **récupération des données** (lecture de la carte SD).
 
+### 5.1 Les participants (lignes de vie)
 
-### 5.1 Objectif
+Chaque ligne de vie est notée `nom : Type`.
 
-Le diagramme de séquence montre, dans l'ordre chronologique, les **échanges de messages** entre les acteurs et les composants logiciels/matériels lors des scénarios principaux. Le temps s'écoule de haut en bas.
-
-### 5.2 Les participants (lignes de vie)
-
-| Participant | Rôle |
+| Ligne de vie | Rôle |
 |---|---|
-| **Ordinateur** | Poste externe utilisé pour lire les données récupérées sur la carte SD |
-| **Utilisateur** | Membre d'équipage / technicien qui pilote la station |
-| **Interface** | Boutons et LED, point d'entrée des commandes de l'utilisateur |
-| **Système** | Logique de contrôle (carte STM32) qui gère les modes |
-| **Capteurs** | Ensemble des capteurs et du GPS |
+| **pc : Ordinateur** | Poste externe utilisé pour lire les données de la carte SD |
+| **technicien : Utilisateur** | Personne qui pilote la station |
+| **ihm : BoutonsEtLEDs** | Interface homme-machine : boutons (entrées) et LED (sorties) |
+| **station : CarteArduino** | Logique de contrôle de la station (carte de pilotage) |
+| **capteurs : Capteurs** | Ensemble des capteurs et du GPS |
+| **sd : CarteSD** | Carte SD qui stocke les mesures |
 
-Le diagramme est découpé en **deux parties (cadres)**.
+### 5.2 Diagramme de séquence de l'affichage des données
+<img width="1467" height="913" alt="image" src="https://github.com/user-attachments/assets/cec8db31-d47d-4ce4-9e26-1ab683738d1e" />
+<img width="1467" height="357" alt="image" src="https://github.com/user-attachments/assets/4d6cb4e8-652f-48d8-8eab-a557dc8cb142" />
 
-### 5.3 Partie 1 — Affichage des données de la station météo (messages 1 à 19)
 
-**a) Démarrage en mode standard (1 à 4)**
 
-1. L'utilisateur **allume** la station via l'interface.
-2. L'interface déclenche l'**activation du mode standard** dans le système.
-3. Le système **active les capteurs**.
-4. Les données mesurées sont **stockées sur la carte SD**.
+Le temps s'écoule de haut en bas. Les flèches pleines sont des **messages envoyés** et les flèches en pointillés des **retours**.
 
-**b) Mode maintenance (5 à 9)**
+**a) Démarrage en mode standard (messages 1 à 4)**
 
-5. L'utilisateur demande le **passage en mode maintenance**.
-6. Le système **active le mode maintenance**.
-7. Il **demande les données** aux capteurs.
-8. Les capteurs **envoient les données**.
-9. Les données sont **affichées à l'écran** via l'interface.
+1. Le technicien **allume** la station via l'IHM.
+2. L'IHM déclenche l'**activation du mode standard** (avec bouton) sur la station.
+3. La station **active les capteurs**.
+4. Les données sont **stockées sur la carte SD**.
 
-**c) Mode économique (10 à 13)**
+**b) Mode maintenance (messages 5 à 9)**
 
-10. L'utilisateur demande le **passage en mode économie**.
-11. Le système **active le mode économie**.
-12. Il **réduit la fréquence d'acquisition** et **active le GPS** selon la cadence prévue pour ce mode.
-13. Les données sont **stockées sur la carte**.
+5. Le technicien demande le **passage en mode maintenance**.
+6. La station **active le mode maintenance**.
+7. Elle **demande les données** aux capteurs.
+8. Les capteurs **renvoient les données** (retour en pointillés).
+9. Les données sont **affichées à l'écran** via l'IHM (retour en pointillés).
 
-**d) Mode configuration (14 à 19)**
+**c) Mode économique (messages 10 à 13)**
 
-14. L'utilisateur demande le **passage en mode configuration**.
-15. Le système **active le mode configuration**.
-16. Le système **ouvre l'interface série**.
-17. L'utilisateur **saisit les données de configuration**.
-18. L'interface **transmet** les données de configuration au système.
-19. Le système **applique les données de configuration** aux capteurs.
+10. Le technicien demande le **passage en mode économie**.
+11. La station **active le mode économie**.
+12. Elle ordonne la **réduction de la fréquence d'acquisition** et l'**activation du GPS une fois sur deux**.
+13. Le **stockage sur la carte SD** est confirmé à la station (retour en pointillés).
 
-### 5.4 Partie 2 — Récupération des données de la station météo (messages 20 à 24)
+**d) Mode configuration (messages 14 à 19)**
 
-20. L'utilisateur **récupère la carte SD** (retrait du système).
+14. Le technicien demande le **passage en mode config**.
+15. La station **active le mode config**.
+16. L'**interface série est ouverte** (retour en pointillés vers l'IHM).
+17. Le technicien **saisit les données de configuration**.
+18. L'IHM **transmet** ces données à la station.
+19. La station **applique les données de configuration** aux capteurs.
+
+### 5.3 Diagramme de séquence de la récupération des données
+
+![Diagramme de séquence - récupération des données](docs/images/diagramme_sequence_recuperation.png)
+
+20. Le technicien **récupère la carte SD** de la station (retour en pointillés).
 21. Il **lit les données** sur l'**ordinateur**.
 22. Il **remet la carte SD** dans la station.
-23. L'utilisateur demande le **passage en mode standard** (ou celui-ci a lieu automatiquement après **30 minutes d'inactivité**).
-24. Le système **active le mode standard** et reprend l'acquisition normale.
+23. Le technicien demande le **passage en mode standard** (ou celui-ci a lieu automatiquement après **30 minutes d'inactivité**).
+24. La station **active le mode standard** et reprend l'acquisition normale.
 
-### 5.5 Points clés
+### 5.4 Points clés
 
-- Chaque changement de mode suit le même schéma : **utilisateur → interface → système → capteurs**.
-- Les **flèches pleines** sont des messages envoyés ; les **flèches en pointillés** sont des retours/réponses.
-- Le scénario de récupération des données montre que la **carte SD est le moyen d'échange** entre la station et l'extérieur.
+- Chaque changement de mode suit le même schéma : **technicien → IHM → station**, puis la station agit sur les **capteurs** et la **carte SD**.
+- La **carte SD** est le moyen d'échange entre la station et l'extérieur : le technicien la retire, lit son contenu sur l'ordinateur, puis la remet en place.
+- Le mode économique réduit l'acquisition et active le GPS **une mesure sur deux**, ce qui est cohérent avec le diagramme d'activités.
 
 ---
 
@@ -230,9 +259,18 @@ Ces quatre diagrammes se complètent :
 
 | Diagramme | Point de vue | Question à laquelle il répond |
 |---|---|---|
-| **Composants** | Architecture matérielle | De quoi est composée la station ? |
+| **Composants** | Architecture matérielle | De quoi est composée la station et par quelles interfaces ? |
 | **Cas d'utilisation** | Fonctionnel | Que permet-elle de faire, et à qui ? |
-| **Activités** | Comportement | Comment le système fonctionne-t-il pas à pas ? |
+| **Activités** | Comportement | Comment le système fonctionne-t-il pas à pas, erreurs comprises ? |
 | **Séquence** | Interactions dans le temps | Qui échange quoi, et dans quel ordre ? |
 
-Ils constituent la base de la phase de développement : les composants définissent le câblage et les drivers à utiliser, les cas d'utilisation fixent les fonctionnalités attendues, et les diagrammes d'activités et de séquence guident l'écriture du code de la machine à états du système.
+### Récapitulatif des modes de fonctionnement
+
+| Mode | Accès | LED | Comportement |
+|---|---|---|---|
+| **Standard** | Démarrage par défaut | — | Acquisition toutes les 10 min, enregistrement sur la carte SD |
+| **Configuration** | Bouton rouge pressé au démarrage | Jaune | Interface série ouverte, retour au standard après 30 min d'inactivité |
+| **Économique** | Appui de 5 s sur le bouton vert | Bleue | Acquisition réduite, GPS une mesure sur deux |
+| **Maintenance** | Appui de 5 s sur le bouton rouge | Orange | Données envoyées sur l'interface série, écriture SD désactivée |
+
+Ces diagrammes constituent la base de la phase de développement : les composants définissent le câblage et les drivers à utiliser, les cas d'utilisation fixent les fonctionnalités attendues, et les diagrammes d'activités et de séquence guident l'écriture de la machine à états du système.
