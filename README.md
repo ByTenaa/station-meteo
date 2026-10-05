@@ -28,7 +28,9 @@ Ce document présente l'analyse du système à travers quatre schémas : composa
 
 ## 2. Diagramme de composants
 
-![Diagramme de composants](docs/images/diagramme_composants.png)
+[Diagramme de composants]
+<img width="1390" height="695" alt="diagramme_composants" src="https://github.com/user-attachments/assets/c810dbf4-d149-4bde-a117-364f63a2468c" />
+
 
 ### 2.1 Objectif
 
@@ -69,7 +71,8 @@ Le cahier des charges prévoit l'ajout ultérieur de modules tiers (température
 
 ## 3. Diagramme de cas d'utilisation
 
-![Diagramme de cas d'utilisation](docs/images/diagramme_cas_utilisation.png)
+[Diagramme de cas d'utilisation]<img width="787" height="646" alt="diagramme_cas_utilisation" src="https://github.com/user-attachments/assets/f59f5076-b913-4752-ada3-236bdd35460e" />
+
 
 ### 3.1 Objectif
 
@@ -119,7 +122,9 @@ Ces trois cas sont reliés par des **flèches en pointillés** au cas **« Déma
 
 ## 4. Diagramme d'activités
 
-![Diagramme d'activités](docs/images/diagramme_activites.png)
+[Diagramme d'activités]
+<img width="1107" height="502" alt="diagramme_activité_bis" src="https://github.com/user-attachments/assets/53590036-1ddd-4926-9f62-ee8938afcbeb" />
+<img width="1073" height="661" alt="diagramme_d&#39;activité_2" src="https://github.com/user-attachments/assets/e9de549f-7653-415e-880c-0a33a9070b59" />
 
 ### 4.1 Objectif
 
@@ -150,7 +155,9 @@ Le diagramme d'activités décrit le **comportement dynamique** de la station : 
 
 ## 5. Diagramme de séquence
 
-![Diagramme de séquence](docs/images/diagramme_sequence.png)
+[Diagramme de séquence]
+<img width="1057" height="743" alt="diagramme_séquence_1" src="https://github.com/user-attachments/assets/49b4f56e-6890-48e9-99dd-fd63dafbd487" /><img width="1046" height="251" alt="diagramme_séquence_2" src="https://github.com/user-attachments/assets/e2927f90-2502-40ed-b8f9-5517f5c90f65" />
+
 
 ### 5.1 Objectif
 
