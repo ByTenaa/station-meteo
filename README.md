@@ -54,7 +54,7 @@ Chaque liaison est annotée avec le type d'interface utilisé.
 | **Lecteur de carte SD** | Permet l'écriture des mesures sur la carte SD | **SPI** |
 | **Carte SD** | Support de stockage des données (reliée au lecteur par un lien en pointillés car **amovible**) | — |
 | **Boutons poussoirs** | Permettent à l'utilisateur de changer de mode | **GPIO + EXTI** |
-| **LED** | Indique l'état/le mode courant du système | **GPIO ** |
+| **LED** | Indique l'état/le mode courant du système | **GPIO** |
 | **Module tiers** | Emplacement prévu pour les modules ajoutés ultérieurement | Selon le module |
 
 ### 2.4 Lecture du schéma
