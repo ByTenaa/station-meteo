@@ -273,4 +273,5 @@ Ces quatre diagrammes se complètent :
 | **Maintenance** | Appui de 5 s sur le bouton rouge | Orange | Données envoyées sur l'interface série, écriture SD désactivée |
 
 Ces diagrammes constituent la base de la phase de développement : les composants définissent le câblage et les drivers à utiliser, les cas d'utilisation fixent les fonctionnalités attendues, et les diagrammes d'activités et de séquence guident l'écriture de la machine à états du système.
+
 Projet réalisé par AZOUZ Abderrazek, L'HOMME Louis et LO Andrea.
