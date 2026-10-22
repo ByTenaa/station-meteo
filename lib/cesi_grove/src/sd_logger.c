@@ -56,7 +56,13 @@ static void SD_Select(void)
                       g_cs_candidates[g_active_cs_index].pin,
                       GPIO_PIN_RESET);
 }
-
+static void SD_SetSpiPrescaler(uint32_t prescaler)
+{
+    __HAL_SPI_DISABLE(&SD_SPI_HANDLE);
+    MODIFY_REG(SD_SPI_HANDLE.Instance->CR1, SPI_CR1_BR, prescaler);
+    SD_SPI_HANDLE.Init.BaudRatePrescaler = prescaler;
+    __HAL_SPI_ENABLE(&SD_SPI_HANDLE);
+}
 static void SD_SetActiveChipSelect(uint8_t index)
 {
     uint8_t i;
@@ -140,6 +146,9 @@ bool SDLogger_Init(void)
 
     g_card_type = SDLOGGER_CARD_UNKNOWN;
     g_init_status = SDLOGGER_INIT_ERR_CMD0;
+
+        /* L'initialisation d'une carte SD doit se faire a moins de 400 kHz */
+    SD_SetSpiPrescaler(SPI_BAUDRATEPRESCALER_256);
 
     for (cs_index = 0; cs_index < SD_CS_CANDIDATE_COUNT; ++cs_index)
     {
@@ -453,4 +462,112 @@ bool SDLogger_WriteLine(const char *filename, const char *line)
 
     /* File write support needs FatFs + diskio SPI. */
     return false;
+}
+/* ---------- acces par blocs de 512 octets (utilise par FatFs) ---------- */
+
+#define SD_CMD16    16
+#define SD_CMD17    17
+#define SD_CMD24    24
+#define SD_TOKEN_START_BLOCK 0xFEU
+
+void SDLogger_SetFastClock(void)
+{
+    SD_SetSpiPrescaler(SPI_BAUDRATEPRESCALER_4);
+
+    if (g_card_type == SDLOGGER_CARD_SDSC)
+    {
+        (void)SD_SendCommand(SD_CMD16, 512U, 0x01U);
+        SD_Deselect();
+    }
+}
+
+static uint32_t SD_BlockAddress(uint32_t sector)
+{
+    return (g_card_type == SDLOGGER_CARD_SDHC) ? sector : (sector * 512UL);
+}
+
+bool SDLogger_ReadBlock(uint32_t sector, uint8_t *buffer)
+{
+    uint8_t token = 0xFF;
+    uint32_t start;
+    uint16_t i;
+
+    if (g_card_type == SDLOGGER_CARD_UNKNOWN || buffer == NULL) return false;
+
+    if (SD_SendCommand(SD_CMD17, SD_BlockAddress(sector), 0x01U) != 0x00U)
+    {
+        SD_Deselect();
+        return false;
+    }
+
+    start = HAL_GetTick();
+    do
+    {
+        token = SD_SPI_Transfer(0xFF);
+    }
+    while (token == 0xFFU && (HAL_GetTick() - start) < 200U);
+
+    if (token != SD_TOKEN_START_BLOCK)
+    {
+        SD_Deselect();
+        return false;
+    }
+
+    for (i = 0; i < 512U; ++i)
+    {
+        buffer[i] = SD_SPI_Transfer(0xFF);
+    }
+    (void)SD_SPI_Transfer(0xFF);
+    (void)SD_SPI_Transfer(0xFF);
+
+    SD_Deselect();
+    return true;
+}
+
+bool SDLogger_WriteBlock(uint32_t sector, const uint8_t *buffer)
+{
+    uint8_t resp;
+    uint16_t i;
+
+    if (g_card_type == SDLOGGER_CARD_UNKNOWN || buffer == NULL) return false;
+
+    if (SD_SendCommand(SD_CMD24, SD_BlockAddress(sector), 0x01U) != 0x00U)
+    {
+        SD_Deselect();
+        return false;
+    }
+
+    (void)SD_SPI_Transfer(0xFF);
+    (void)SD_SPI_Transfer(SD_TOKEN_START_BLOCK);
+    for (i = 0; i < 512U; ++i)
+    {
+        (void)SD_SPI_Transfer(buffer[i]);
+    }
+    (void)SD_SPI_Transfer(0xFF);
+    (void)SD_SPI_Transfer(0xFF);
+
+    resp = SD_SPI_Transfer(0xFF);
+    if ((resp & 0x1FU) != 0x05U)
+    {
+        SD_Deselect();
+        return false;
+    }
+
+    if (!SD_WaitReady(500U))
+    {
+        SD_Deselect();
+        return false;
+    }
+
+    SD_Deselect();
+    return true;
+}
+
+bool SDLogger_WaitReady(void)
+{
+    bool ok;
+    SD_Select();
+    ok = SD_WaitReady(500U);
+    SD_Deselect();
+    return ok;
 }

@@ -2,6 +2,7 @@
 #define SD_LOGGER_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef enum
 {
@@ -21,6 +22,11 @@ typedef enum
 } SDLoggerInitStatus;
 
 bool SDLogger_Init(void);
+/* Acces bas niveau par secteurs de 512 octets (utilise par FatFs) */
+void SDLogger_SetFastClock(void);
+bool SDLogger_ReadBlock(uint32_t sector, uint8_t *buffer);
+bool SDLogger_WriteBlock(uint32_t sector, const uint8_t *buffer);
+bool SDLogger_WaitReady(void);
 SDLoggerCardType SDLogger_GetCardType(void);
 SDLoggerInitStatus SDLogger_GetLastInitStatus(void);
 const char *SDLogger_GetActiveCsLabel(void);
