@@ -197,7 +197,7 @@ Chaque ligne de vie est notée `nom : Type`.
 | **sd : CarteSD** | Carte SD qui stocke les mesures |
 
 ### 5.2 Diagramme de séquence de l'affichage des données
-<img width="1497" height="910" alt="image" src="https://github.com/user-attachments/assets/8f358e57-4dc3-4f5b-a856-4a3841762fdc" />
+<img width="1452" height="900" alt="image" src="https://github.com/user-attachments/assets/ed6c020a-b446-46bd-94f6-4a008ed91758" />
 <img width="1492" height="367" alt="image" src="https://github.com/user-attachments/assets/70182ba1-951f-404e-b824-62f4dfce472c" />
 
 
